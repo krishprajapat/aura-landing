@@ -1,12 +1,18 @@
+
 import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
+import { createPaymentIntent, handleWebhook } from "./routes/stripe";
 
 export function createServer() {
   const app = express();
 
   // Middleware
   app.use(cors());
+  
+  // Stripe webhook needs raw body
+  app.use('/api/webhook', express.raw({ type: 'application/json' }));
+  
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
@@ -16,6 +22,10 @@ export function createServer() {
   });
 
   app.get("/api/demo", handleDemo);
+  
+  // Stripe routes
+  app.post("/api/create-payment-intent", createPaymentIntent);
+  app.post("/api/webhook", handleWebhook);
 
   return app;
 }
