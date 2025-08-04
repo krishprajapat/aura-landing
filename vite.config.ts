@@ -17,7 +17,10 @@ export default defineConfig(({ mode }) => {
     server: {
       host: "0.0.0.0",
       port: 8080,
-      allowedHosts: "all",
+      allowedHosts: [
+        'de1e6208-4758-4cc7-8a2d-11e06adac39f-00-hg8vev7cd206.sisko.replit.dev'
+      ],
+      
     },
     build: {
       outDir: "dist/spa",
