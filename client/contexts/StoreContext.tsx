@@ -24,12 +24,14 @@ interface StoreContextType {
   products: Product[];
   cart: CartItem[];
   wishlist: string[];
-  addToCart: (product: Product, quantity?: number, size?: string, color?: string) => void;
+  addToCart: (product: Product, size?: string, color?: string) => void;
   removeFromCart: (productId: string) => void;
   updateCartItemQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
-  addToWishlist: (productId: string) => void;
+  addToWishlist: (product: Product) => void;
   removeFromWishlist: (productId: string) => void;
+  isInWishlist: (productId: string) => boolean;
+  isInCart: (productId: string) => boolean;
   total: number;
   cartItemsCount: number;
 }
@@ -65,20 +67,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('wishlist', JSON.stringify(wishlist));
   }, [wishlist]);
 
-  const addToCart = (product: Product, quantity = 1, size?: string, color?: string) => {
+  const addToCart = (product: Product, size?: string, color?: string) => {
     const existingItem = cart.find(item => 
       item.id === product.id && item.size === size && item.color === color
     );
 
     if (existingItem) {
-      updateCartItemQuantity(product.id, existingItem.quantity + quantity);
+      updateCartItemQuantity(product.id, existingItem.quantity + 1);
     } else {
       const newItem: CartItem = {
         id: product.id,
         name: product.name,
         price: product.price,
         image: product.image,
-        quantity,
+        quantity: 1,
         size,
         color,
       };
@@ -107,12 +109,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setCart([]);
   };
 
-  const addToWishlist = (productId: string) => {
-    setWishlist(prev => [...prev, productId]);
+  const addToWishlist = (product: Product) => {
+    if (!wishlist.includes(product.id)) {
+      setWishlist(prev => [...prev, product.id]);
+    }
   };
 
   const removeFromWishlist = (productId: string) => {
     setWishlist(prev => prev.filter(id => id !== productId));
+  };
+
+  const isInWishlist = (productId: string) => {
+    return wishlist.includes(productId);
+  };
+
+  const isInCart = (productId: string) => {
+    return cart.some(item => item.id === productId);
   };
 
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -128,6 +140,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     clearCart,
     addToWishlist,
     removeFromWishlist,
+    isInWishlist,
+    isInCart,
     total,
     cartItemsCount,
   };
