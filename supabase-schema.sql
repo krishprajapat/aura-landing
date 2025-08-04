@@ -67,6 +67,17 @@ CREATE TABLE user_addresses (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Cart items table
+CREATE TABLE cart_items (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  product_id UUID REFERENCES products(id) ON DELETE CASCADE,
+  quantity INTEGER NOT NULL DEFAULT 1,
+  size TEXT,
+  color TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Wishlist table
 CREATE TABLE wishlist (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,

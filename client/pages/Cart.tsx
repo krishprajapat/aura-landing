@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "../components/Header";
@@ -5,8 +6,7 @@ import Footer from "../components/Footer";
 import { useStore } from "../contexts/StoreContext";
 
 export default function Cart() {
-  const { state, updateCartQuantity, removeFromCart, moveToWishlist, clearCart } = useStore();
-  const { cart } = state;
+  const { cart, removeFromCart, updateCartItemQuantity, clearCart, addToWishlist, total, cartItemsCount } = useStore();
 
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<{
@@ -23,14 +23,19 @@ export default function Cart() {
     }
   };
 
-  const subtotal = cart.reduce(
-    (total, item) => total + item.price * item.quantity,
-    0,
-  );
+  const subtotal = total;
   const discount = appliedPromo ? subtotal * appliedPromo.discount : 0;
   const shipping = subtotal > 150 ? 0 : 15;
   const tax = (subtotal - discount) * 0.08; // 8% tax
-  const total = subtotal - discount + shipping + tax;
+  const finalTotal = subtotal - discount + shipping + tax;
+
+  const moveToWishlist = async (cartItemId: string) => {
+    const cartItem = cart.find(item => item.id === cartItemId);
+    if (cartItem && cartItem.product) {
+      await addToWishlist(cartItem.product);
+      await removeFromCart(cartItemId);
+    }
+  };
 
   if (cart.length === 0) {
     return (
@@ -82,7 +87,7 @@ export default function Cart() {
               Shopping Cart
             </h1>
             <p className="font-dm-sans text-gray-600">
-              {cart.length} item{cart.length !== 1 ? "s" : ""} in your cart
+              {cartItemsCount} item{cartItemsCount !== 1 ? "s" : ""} in your cart
             </p>
           </div>
           
@@ -109,8 +114,8 @@ export default function Cart() {
                     {/* Product Image */}
                     <div className="flex-shrink-0">
                       <img
-                        src={item.image}
-                        alt={item.name}
+                        src={item.product?.image_url || '/placeholder.svg'}
+                        alt={item.product?.name || 'Product'}
                         className="w-full md:w-32 h-48 md:h-32 object-cover rounded-lg"
                       />
                     </div>
@@ -120,12 +125,12 @@ export default function Cart() {
                       <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
                         <div className="flex-1">
                           <h3 className="font-anonymous text-lg md:text-xl font-bold text-brand-dark-brown mb-2">
-                            {item.name}
+                            {item.product?.name || 'Product'}
                           </h3>
                           <div className="space-y-1 text-sm font-dm-sans text-gray-600">
-                            <p>Size: {item.size}</p>
-                            <p>Color: {item.color}</p>
-                            {!item.inStock && (
+                            {item.size && <p>Size: {item.size}</p>}
+                            {item.color && <p>Color: {item.color}</p>}
+                            {item.product && !item.product.in_stock && (
                               <p className="text-red-600 font-medium">
                                 Out of Stock
                               </p>
@@ -133,13 +138,8 @@ export default function Cart() {
                           </div>
                           <div className="flex items-center gap-2 mt-2">
                             <span className="font-dm-sans text-lg font-bold text-brand-sage">
-                              ${item.price}
+                              ${item.product?.price || 0}
                             </span>
-                            {item.originalPrice && (
-                              <span className="font-dm-sans text-sm text-gray-400 line-through">
-                                ${item.originalPrice}
-                              </span>
-                            )}
                           </div>
                         </div>
 
@@ -152,10 +152,10 @@ export default function Cart() {
                             <div className="flex items-center border border-gray-300 rounded-md">
                               <button
                                 onClick={() =>
-                                  updateCartQuantity(item.id, item.quantity - 1)
+                                  updateCartItemQuantity(item.id, item.quantity - 1)
                                 }
                                 className="px-3 py-1 hover:bg-gray-100 transition-colors"
-                                disabled={!item.inStock}
+                                disabled={!item.product?.in_stock}
                               >
                                 -
                               </button>
@@ -164,10 +164,10 @@ export default function Cart() {
                               </span>
                               <button
                                 onClick={() =>
-                                  updateCartQuantity(item.id, item.quantity + 1)
+                                  updateCartItemQuantity(item.id, item.quantity + 1)
                                 }
                                 className="px-3 py-1 hover:bg-gray-100 transition-colors"
-                                disabled={!item.inStock}
+                                disabled={!item.product?.in_stock}
                               >
                                 +
                               </button>
@@ -314,7 +314,7 @@ export default function Cart() {
                 <hr className="border-gray-300" />
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
-                  <span className="text-brand-sage">${total.toFixed(2)}</span>
+                  <span className="text-brand-sage">${finalTotal.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -330,9 +330,9 @@ export default function Cart() {
               {/* Checkout Button */}
               <button
                 className="w-full py-3 bg-brand-sage text-white font-dm-sans font-semibold rounded-md hover:bg-brand-green transition-colors mb-4"
-                disabled={cart.some((item) => !item.inStock)}
+                disabled={cart.some((item) => !item.product?.in_stock)}
               >
-                {cart.some((item) => !item.inStock)
+                {cart.some((item) => !item.product?.in_stock)
                   ? "Some items unavailable"
                   : "Proceed to Checkout"}
               </button>

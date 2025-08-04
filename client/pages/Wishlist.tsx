@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "../components/Header";
@@ -5,8 +6,7 @@ import Footer from "../components/Footer";
 import { useStore } from "../contexts/StoreContext";
 
 export default function Wishlist() {
-  const { state, removeFromWishlist, moveToCart } = useStore();
-  const { wishlist } = state;
+  const { wishlist, removeFromWishlist, addToCart } = useStore();
 
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [selectedSize, setSelectedSize] = useState<{ [key: string]: string }>({});
@@ -26,47 +26,64 @@ export default function Wishlist() {
     }
   };
 
-  const addToCart = (item: any) => {
+  const handleAddToCart = async (item: any) => {
+    if (!item.product) return;
+    
     const size = selectedSize[item.id];
     const color = selectedColor[item.id];
 
-    if (!size || !color) {
-      alert("Please select size and color before adding to cart");
+    if (item.product.sizes?.length > 0 && !size) {
+      alert("Please select a size");
       return;
     }
 
-    moveToCart(item.id, size, color);
+    if (item.product.colors?.length > 0 && !color) {
+      alert("Please select a color");
+      return;
+    }
+
+    await addToCart(item.product, size, color);
   };
 
-  const addSelectedToCart = () => {
+  const addSelectedToCart = async () => {
     const selectedItemsData = wishlist.filter((item) =>
       selectedItems.includes(item.id),
     );
 
-    const missingSelections = selectedItemsData.filter(
-      (item) => !selectedSize[item.id] || !selectedColor[item.id],
-    );
+    for (const item of selectedItemsData) {
+      if (!item.product) continue;
+      
+      const size = selectedSize[item.id];
+      const color = selectedColor[item.id];
 
-    if (missingSelections.length > 0) {
-      alert(
-        "Please select size and color for all selected items before adding to cart",
-      );
-      return;
+      if (item.product.sizes?.length > 0 && !size) {
+        alert(`Please select size for ${item.product.name}`);
+        return;
+      }
+
+      if (item.product.colors?.length > 0 && !color) {
+        alert(`Please select color for ${item.product.name}`);
+        return;
+      }
     }
 
-    selectedItemsData.forEach((item) => {
-      moveToCart(item.id, selectedSize[item.id], selectedColor[item.id]);
-    });
+    // Add all items to cart
+    for (const item of selectedItemsData) {
+      if (item.product) {
+        await addToCart(item.product, selectedSize[item.id], selectedColor[item.id]);
+      }
+    }
+    
     setSelectedItems([]);
   };
 
-  const removeSelected = () => {
-    selectedItems.forEach((itemId) => {
+  const removeSelected = async () => {
+    for (const itemId of selectedItems) {
       const item = wishlist.find((w) => w.id === itemId);
       if (item) {
-        removeFromWishlist(item.productId);
+        await removeFromWishlist(item.product_id);
       }
-    });
+    }
     setSelectedItems([]);
   };
 
@@ -166,8 +183,8 @@ export default function Wishlist() {
               {/* Item Image */}
               <div className="relative">
                 <img
-                  src={item.image}
-                  alt={item.name}
+                  src={item.product?.image_url || '/placeholder.svg'}
+                  alt={item.product?.name || 'Product'}
                   className="w-full h-64 object-cover"
                 />
 
@@ -183,7 +200,7 @@ export default function Wishlist() {
 
                 {/* Remove Button */}
                 <button
-                  onClick={() => removeFromWishlist(item.productId)}
+                  onClick={() => removeFromWishlist(item.product_id)}
                   className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
                   title="Remove from wishlist"
                 >
@@ -206,106 +223,96 @@ export default function Wishlist() {
                 <div className="absolute bottom-3 left-3">
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-dm-sans font-semibold ${
-                      item.inStock
+                      item.product?.in_stock
                         ? "bg-green-100 text-green-800"
                         : "bg-red-100 text-red-800"
                     }`}
                   >
-                    {item.inStock ? "In Stock" : "Out of Stock"}
+                    {item.product?.in_stock ? "In Stock" : "Out of Stock"}
                   </span>
                 </div>
-
-                {/* Sale Badge */}
-                {item.originalPrice && (
-                  <div className="absolute bottom-3 right-3">
-                    <span className="px-2 py-1 bg-red-500 text-white text-xs font-dm-sans font-semibold rounded-full">
-                      SALE
-                    </span>
-                  </div>
-                )}
               </div>
 
               {/* Item Details */}
               <div className="p-4">
                 <div className="mb-3">
                   <span className="text-xs font-dm-sans text-gray-500 uppercase tracking-wide">
-                    {item.category}
+                    {item.product?.category || 'Uncategorized'}
                   </span>
                   <h3 className="font-anonymous text-lg font-bold text-brand-dark-brown mt-1">
-                    {item.name}
+                    {item.product?.name || 'Product'}
                   </h3>
                   <div className="flex items-center gap-2 mt-2">
                     <span className="font-dm-sans text-lg font-bold text-brand-sage">
-                      ${item.price}
+                      ${item.product?.price || 0}
                     </span>
-                    {item.originalPrice && (
-                      <span className="font-dm-sans text-sm text-gray-400 line-through">
-                        ${item.originalPrice}
-                      </span>
-                    )}
                   </div>
                 </div>
 
                 {/* Size Selection */}
-                <div className="mb-3">
-                  <label className="block font-dm-sans text-xs font-medium text-gray-700 mb-1">
-                    Size
-                  </label>
-                  <select
-                    value={selectedSize[item.id] || ""}
-                    onChange={(e) =>
-                      setSelectedSize((prev) => ({
-                        ...prev,
-                        [item.id]: e.target.value,
-                      }))
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-brand-sage focus:border-brand-sage font-dm-sans text-sm"
-                  >
-                    <option value="">Select Size</option>
-                    {item.sizes.map((size) => (
-                      <option key={size} value={size}>
-                        {size}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {item.product?.sizes && item.product.sizes.length > 0 && (
+                  <div className="mb-3">
+                    <label className="block font-dm-sans text-xs font-medium text-gray-700 mb-1">
+                      Size
+                    </label>
+                    <select
+                      value={selectedSize[item.id] || ""}
+                      onChange={(e) =>
+                        setSelectedSize((prev) => ({
+                          ...prev,
+                          [item.id]: e.target.value,
+                        }))
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-brand-sage focus:border-brand-sage font-dm-sans text-sm"
+                    >
+                      <option value="">Select Size</option>
+                      {item.product.sizes.map((size) => (
+                        <option key={size} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 {/* Color Selection */}
-                <div className="mb-4">
-                  <label className="block font-dm-sans text-xs font-medium text-gray-700 mb-1">
-                    Color
-                  </label>
-                  <select
-                    value={selectedColor[item.id] || ""}
-                    onChange={(e) =>
-                      setSelectedColor((prev) => ({
-                        ...prev,
-                        [item.id]: e.target.value,
-                      }))
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-brand-sage focus:border-brand-sage font-dm-sans text-sm"
-                  >
-                    <option value="">Select Color</option>
-                    {item.colors.map((color) => (
-                      <option key={color} value={color}>
-                        {color}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {item.product?.colors && item.product.colors.length > 0 && (
+                  <div className="mb-4">
+                    <label className="block font-dm-sans text-xs font-medium text-gray-700 mb-1">
+                      Color
+                    </label>
+                    <select
+                      value={selectedColor[item.id] || ""}
+                      onChange={(e) =>
+                        setSelectedColor((prev) => ({
+                          ...prev,
+                          [item.id]: e.target.value,
+                        }))
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-brand-sage focus:border-brand-sage font-dm-sans text-sm"
+                    >
+                      <option value="">Select Color</option>
+                      {item.product.colors.map((color) => (
+                        <option key={color} value={color}>
+                          {color}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 {/* Add to Cart Button */}
                 <button
-                  onClick={() => addToCart(item)}
-                  disabled={!item.inStock}
+                  onClick={() => handleAddToCart(item)}
+                  disabled={!item.product?.in_stock}
                   className="w-full py-2 bg-brand-sage text-white font-dm-sans font-semibold rounded-md hover:bg-brand-green transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {item.inStock ? "Add to Cart" : "Out of Stock"}
+                  {item.product?.in_stock ? "Add to Cart" : "Out of Stock"}
                 </button>
 
                 {/* Date Added */}
                 <div className="mt-3 text-xs font-dm-sans text-gray-500">
-                  Added on {new Date(item.dateAdded).toLocaleDateString()}
+                  Added on {new Date(item.created_at).toLocaleDateString()}
                 </div>
               </div>
             </div>
