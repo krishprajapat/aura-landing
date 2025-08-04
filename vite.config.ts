@@ -20,7 +20,10 @@ export default defineConfig(({ mode }) => {
       allowedHosts: [
         'de1e6208-4758-4cc7-8a2d-11e06adac39f-00-hg8vev7cd206.sisko.replit.dev'
       ],
-      
+      middlewareMode: false,
+      hmr: {
+        port: 8080
+      }
     },
     build: {
       outDir: "dist/spa",
