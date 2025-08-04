@@ -4,6 +4,7 @@ import * as express from "express";
 
 const app = createServer();
 const port = process.env.PORT || 3000;
+const host = process.env.HOST || "0.0.0.0";
 
 // In production, serve the built SPA files
 const __dirname = import.meta.dirname;
@@ -22,10 +23,10 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(distPath, "index.html"));
 });
 
-app.listen(port, () => {
+app.listen(port, host, () => {
   console.log(`🚀 Fusion Starter server running on port ${port}`);
-  console.log(`📱 Frontend: http://localhost:${port}`);
-  console.log(`🔧 API: http://localhost:${port}/api`);
+  console.log(`📱 Frontend: http://${host}:${port}`);
+  console.log(`🔧 API: http://${host}:${port}/api`);
 });
 
 // Graceful shutdown

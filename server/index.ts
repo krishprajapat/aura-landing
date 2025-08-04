@@ -31,3 +31,14 @@ export function createServer() {
 
   return app;
 }
+
+// Start the server if this file is run directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const app = createServer();
+  const port = process.env.PORT || 8080;
+  const host = process.env.HOST || '0.0.0.0';
+  
+  app.listen(port, host, () => {
+    console.log(`Server running on http://${host}:${port}`);
+  });
+}
