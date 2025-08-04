@@ -76,6 +76,18 @@ CREATE TABLE wishlist (
   UNIQUE(user_id, product_id)
 );
 
+-- Cart items table
+CREATE TABLE cart_items (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  product_id UUID REFERENCES products(id) ON DELETE CASCADE,
+  quantity INTEGER NOT NULL DEFAULT 1,
+  size TEXT,
+  color TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Insert sample products
 INSERT INTO products (name, description, price, image_url, category, sizes, colors, in_stock) VALUES
 ('Classic Cotton T-Shirt', 'Premium cotton t-shirt with perfect fit', 29.99, '/api/placeholder/400/500', 'Tops', ARRAY['XS', 'S', 'M', 'L', 'XL'], ARRAY['White', 'Black', 'Navy'], true),

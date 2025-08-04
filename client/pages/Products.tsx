@@ -1,124 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useStore, Product } from "../contexts/StoreContext";
 
-const products: Product[] = [
-  {
-    id: "1",
-    name: "Refined Wool Coat",
-    price: 450,
-    originalPrice: 550,
-    image:
-      "https://api.builder.io/api/v1/image/assets/TEMP/1e077b59a283703cf2ecd0e87a6eb53471308487?width=600",
-    category: "Outerwear",
-    description: "Luxurious wool blend coat with sophisticated tailoring and modern fit",
-    sizes: ["XS", "S", "M", "L", "XL"],
-    colors: ["Sage Green", "Navy Blue", "Charcoal"],
-    inStock: true,
-    isSale: true,
-  },
-  {
-    id: "2",
-    name: "Classic Blazer",
-    price: 320,
-    image:
-      "https://api.builder.io/api/v1/image/assets/TEMP/45d1f1251c065c28ca175a8d1d690d4cbd83b842?width=600",
-    category: "Blazers",
-    description: "Timeless blazer perfect for professional and casual settings",
-    sizes: ["XS", "S", "M", "L", "XL", "XXL"],
-    colors: ["Navy Blue", "Black", "Dark Gray"],
-    inStock: true,
-    isNew: true,
-  },
-  {
-    id: "3",
-    name: "Elegant Suit Jacket",
-    price: 380,
-    image:
-      "https://api.builder.io/api/v1/image/assets/TEMP/a13bd1187fb2a0e635dd550a8a5016227d1fa138?width=600",
-    category: "Suits",
-    description: "Sophisticated suit jacket with modern cut and premium fabric",
-    sizes: ["S", "M", "L", "XL"],
-    colors: ["Charcoal", "Navy Blue", "Black"],
-    inStock: true,
-  },
-  {
-    id: "4",
-    name: "Premium Overcoat",
-    price: 520,
-    image:
-      "https://api.builder.io/api/v1/image/assets/TEMP/05b479494c829b43d546f99dc8ce031e319ef467?width=600",
-    category: "Outerwear",
-    description: "Exceptional quality overcoat for the discerning gentleman",
-    sizes: ["M", "L", "XL", "XXL"],
-    colors: ["Camel", "Black", "Navy Blue"],
-    inStock: true,
-    isNew: true,
-  },
-  {
-    id: "5",
-    name: "Designer Cardigan",
-    price: 280,
-    originalPrice: 350,
-    image:
-      "https://api.builder.io/api/v1/image/assets/TEMP/678895d81c15669c94575725cccdc00cf34397d6?width=600",
-    category: "Knitwear",
-    description: "Luxurious cashmere blend cardigan with refined details",
-    sizes: ["XS", "S", "M", "L", "XL"],
-    colors: ["Beige", "Cream", "Light Gray"],
-    inStock: true,
-    isSale: true,
-  },
-  {
-    id: "6",
-    name: "Modern Dress Shirt",
-    price: 150,
-    image:
-      "https://api.builder.io/api/v1/image/assets/TEMP/a888418fe183a8a05e5178e82fd99518b4299b93?width=600",
-    category: "Shirts",
-    description: "Contemporary dress shirt with impeccable fit and comfort",
-    sizes: ["S", "M", "L", "XL", "XXL"],
-    colors: ["White", "Light Blue", "Pink"],
-    inStock: true,
-  },
-  {
-    id: "7",
-    name: "Tailored Trousers",
-    price: 220,
-    image:
-      "https://api.builder.io/api/v1/image/assets/TEMP/45d1f1251c065c28ca175a8d1d690d4cbd83b842?width=600",
-    category: "Trousers",
-    description: "Perfectly tailored trousers in premium fabric",
-    sizes: ["30", "32", "34", "36", "38"],
-    colors: ["Navy Blue", "Charcoal", "Black"],
-    inStock: true,
-  },
-  {
-    id: "8",
-    name: "Casual Polo",
-    price: 95,
-    originalPrice: 120,
-    image:
-      "https://api.builder.io/api/v1/image/assets/TEMP/a13bd1187fb2a0e635dd550a8a5016227d1fa138?width=600",
-    category: "Casual",
-    description: "Comfortable polo shirt for everyday elegance",
-    sizes: ["S", "M", "L", "XL"],
-    colors: ["White", "Navy Blue", "Forest Green"],
-    inStock: true,
-    isSale: true,
-  },
-];
-
 const categories = [
   "All",
   "Outerwear",
-  "Blazers",
+  "Blazers", 
   "Suits",
   "Knitwear",
   "Shirts",
   "Trousers",
   "Casual",
+  "Tops",
+  "Bottoms"
 ];
 
 interface ProductDetailsModalProps {
@@ -419,7 +314,7 @@ export default function Products() {
   const [sortBy, setSortBy] = useState("name");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   
-  const { addToCart, addToWishlist, isInWishlist, isInCart } = useStore();
+  const { products, addToCart, addToWishlist, isInWishlist, isInCart, loading } = useStore();
 
   const filteredProducts = products.filter(
     (product) =>
@@ -507,7 +402,21 @@ export default function Products() {
       {/* Products Grid */}
       <section className="py-12 md:py-16 lg:py-24 px-4 md:px-12 lg:px-40">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 lg:gap-12">
+          {loading ? (
+            <div className="flex justify-center items-center py-20">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-sage"></div>
+            </div>
+          ) : sortedProducts.length === 0 ? (
+            <div className="text-center py-20">
+              <h3 className="font-anonymous text-2xl font-bold text-brand-dark-brown mb-4">
+                No products found
+              </h3>
+              <p className="font-dm-sans text-gray-600">
+                Try adjusting your filters or check back later for new arrivals.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 lg:gap-12">
             {sortedProducts.map((product) => (
               <div
                 key={product.id}
@@ -515,14 +424,9 @@ export default function Products() {
                 onClick={() => setSelectedProduct(product)}
               >
                 <div className="relative overflow-hidden">
-                  {product.isNew && (
+                  {product.in_stock && (
                     <div className="absolute top-3 left-3 z-10 bg-brand-green text-white px-2 md:px-3 py-1 rounded-full text-xs font-dm-sans font-semibold">
-                      NEW
-                    </div>
-                  )}
-                  {product.isSale && (
-                    <div className="absolute top-3 right-3 z-10 bg-red-500 text-white px-2 md:px-3 py-1 rounded-full text-xs font-dm-sans font-semibold">
-                      SALE
+                      IN STOCK
                     </div>
                   )}
                   
@@ -548,7 +452,7 @@ export default function Products() {
                   </button>
 
                   <img
-                    src={product.image}
+                    src={product.image_url}
                     alt={product.name}
                     className="w-full h-[280px] md:h-[350px] lg:h-[400px] object-cover group-hover:scale-105 transition-transform duration-300"
                   />
@@ -605,7 +509,8 @@ export default function Products() {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          )}
         </div>
       </section>
 
